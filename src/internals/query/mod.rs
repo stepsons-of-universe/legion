@@ -1,5 +1,5 @@
 use std::{collections::HashMap, marker::PhantomData, ops::Range, slice::Iter};
-
+use std::any::type_name;
 use filter::{DynamicFilter, EntityFilter, GroupMatcher};
 use parking_lot::Mutex;
 use view::{DefaultFilter, Fetch, IntoIndexableIter, IntoView, ReadOnlyFetch, View};
@@ -233,7 +233,8 @@ impl<V: IntoView, F: EntityFilter> Query<V, F> {
         &'a mut self,
         world: &'a T,
     ) -> &'a [ArchetypeIndex] {
-        let accessor = world.get_component_storage::<V::View>().unwrap();
+        let accessor = world.get_component_storage::<V::View>()
+            .expect(&format!("EntityAccessDenied for view: {}", type_name::<V>()));
         let (_, result) = self.evaluate_query(&accessor);
         result.index()
     }
@@ -260,7 +261,7 @@ impl<V: IntoView, F: EntityFilter> Query<V, F> {
         T: EntityStore,
     {
         let location = world.entry_ref(entity)?.location();
-        let accessor = world.get_component_storage::<V::View>().unwrap();
+        let accessor = world.get_component_storage::<V::View>()?;
 
         // safety:
         // This is much like the similar usage of transmute inside iter_chunks_unchecked, see
@@ -342,7 +343,8 @@ impl<V: IntoView, F: EntityFilter> Query<V, F> {
         &'query mut self,
         world: &'world T,
     ) -> ChunkIter<'world, 'query, V::View, F> {
-        let accessor = world.get_component_storage::<V::View>().unwrap();
+        let accessor = world.get_component_storage::<V::View>()
+            .expect(&format!("EntityAccessDenied for view: {}", type_name::<V>()));
         let (_, result) = self.evaluate_query(&accessor);
 
         // What we want:
@@ -407,7 +409,8 @@ impl<V: IntoView, F: EntityFilter> Query<V, F> {
         &'a mut self,
         world: &'a T,
     ) -> par_iter::ParChunkIter<'a, V::View, F> {
-        let accessor = world.get_component_storage::<V::View>().unwrap();
+        let accessor = world.get_component_storage::<V::View>()
+            .expect(&format!("EntityAccessDenied for view: {}", type_name::<V>()));
         let (filter, result) = self.evaluate_query(&accessor);
         par_iter::ParChunkIter::new(accessor, result, filter)
     }

@@ -1,5 +1,6 @@
 //! Contains types related to the [`SubWorld`] which can split a world by component type access.
 
+use std::any::type_name;
 use std::borrow::Cow;
 
 use bit_set::BitSet;
@@ -256,6 +257,8 @@ impl<'a> EntityStore for SubWorld<'a> {
                 .unwrap()
                 .with_allowed_archetypes(self.archetypes))
         } else {
+            // It's unwrap()ed on every path anyway.
+            // println!("invalid view access: {}", type_name::<V>());
             Err(EntityAccessError::AccessDenied)
         }
     }
